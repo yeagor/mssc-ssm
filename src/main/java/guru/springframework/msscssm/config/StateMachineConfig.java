@@ -2,21 +2,23 @@ package guru.springframework.msscssm.config;
 
 import guru.springframework.msscssm.domain.PaymentEvent;
 import guru.springframework.msscssm.domain.PaymentState;
-import guru.springframework.msscssm.services.action.AuthAction;
-import guru.springframework.msscssm.services.action.AuthApprovedAction;
-import guru.springframework.msscssm.services.action.AuthDeclinedAction;
-import guru.springframework.msscssm.services.action.PreAuthAction;
-import guru.springframework.msscssm.services.action.PreAuthApprovedAction;
-import guru.springframework.msscssm.services.action.PreAuthDeclinedAction;
-import guru.springframework.msscssm.services.guard.PaymentGuard;
+import guru.springframework.msscssm.config.action.AuthAction;
+import guru.springframework.msscssm.config.action.AuthApprovedAction;
+import guru.springframework.msscssm.config.action.AuthDeclinedAction;
+import guru.springframework.msscssm.config.action.PreAuthAction;
+import guru.springframework.msscssm.config.action.PreAuthApprovedAction;
+import guru.springframework.msscssm.config.action.PreAuthDeclinedAction;
+import guru.springframework.msscssm.config.guard.PaymentGuard;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.StateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.builders.StateMachineConfigurationConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
+import org.springframework.statemachine.guard.Guard;
 import org.springframework.statemachine.listener.StateMachineListenerAdapter;
 import org.springframework.statemachine.state.State;
 
@@ -33,33 +35,20 @@ import static guru.springframework.msscssm.domain.PaymentState.AUTH_ERROR;
 import static guru.springframework.msscssm.domain.PaymentState.NEW;
 import static guru.springframework.msscssm.domain.PaymentState.PRE_AUTH;
 import static guru.springframework.msscssm.domain.PaymentState.PRE_AUTH_ERROR;
-import static guru.springframework.msscssm.services.PaymentServiceImpl.PAYMENT_ID_HEADER;
 
 @Slf4j
+@RequiredArgsConstructor
 @EnableStateMachineFactory
 @Configuration
 public class StateMachineConfig extends StateMachineConfigurerAdapter<PaymentState, PaymentEvent> {
 
-    @Autowired
-    PreAuthAction preAuthAction;
-
-    @Autowired
-    PreAuthApprovedAction preAuthApprovedAction;
-
-    @Autowired
-    PreAuthDeclinedAction preAuthDeclinedAction;
-
-    @Autowired
-    AuthAction authAction;
-
-    @Autowired
-    AuthApprovedAction authApprovedAction;
-
-    @Autowired
-    AuthDeclinedAction authDeclinedAction;
-
-    @Autowired
-    PaymentGuard paymentGuard;
+    private final Action<PaymentState, PaymentEvent> preAuthAction;
+    private final Action<PaymentState, PaymentEvent> preAuthApprovedAction;
+    private final Action<PaymentState, PaymentEvent> preAuthDeclinedAction;
+    private final Action<PaymentState, PaymentEvent> authAction;
+    private final Action<PaymentState, PaymentEvent> authApprovedAction;
+    private final Action<PaymentState, PaymentEvent> authDeclinedAction;
+    private final Guard<PaymentState, PaymentEvent> paymentGuard;
 
     @Override
     public void configure(StateMachineStateConfigurer<PaymentState, PaymentEvent> states) throws Exception {
@@ -75,27 +64,27 @@ public class StateMachineConfig extends StateMachineConfigurerAdapter<PaymentSta
     public void configure(StateMachineTransitionConfigurer<PaymentState, PaymentEvent> transitions) throws Exception {
         transitions
                 .withExternal().source(NEW).target(NEW).event(PRE_AUTHORIZE)
-                    .action(preAuthAction.getAction()).guard(paymentGuard.getGuard())
+                    .action(preAuthAction).guard(paymentGuard)
                 .and()
 
                 .withExternal().source(NEW).target(PRE_AUTH).event(PRE_AUTH_APPROVED)
-                    .action(preAuthApprovedAction.getAction())
+                    .action(preAuthApprovedAction)
                 .and()
 
                 .withExternal().source(NEW).target(PRE_AUTH_ERROR).event(PRE_AUTH_DECLINED)
-                    .action(preAuthDeclinedAction.getAction())
+                    .action(preAuthDeclinedAction)
                 .and()
 
                 .withExternal().source(PRE_AUTH).target(PRE_AUTH).event(AUTHORIZE)
-                    .action(authAction.getAction())
+                    .action(authAction)
                 .and()
 
                 .withExternal().source(PRE_AUTH).target(AUTH).event(AUTH_APPROVED)
-                    .action(authApprovedAction.getAction())
+                    .action(authApprovedAction)
                 .and()
 
                 .withExternal().source(PRE_AUTH).target(AUTH_ERROR).event(AUTH_DECLINED)
-                    .action(authDeclinedAction.getAction())
+                    .action(authDeclinedAction)
         ;
     }
 
