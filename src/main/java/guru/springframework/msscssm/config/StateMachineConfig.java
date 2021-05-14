@@ -3,7 +3,11 @@ package guru.springframework.msscssm.config;
 import guru.springframework.msscssm.domain.PaymentEvent;
 import guru.springframework.msscssm.domain.PaymentState;
 import guru.springframework.msscssm.services.action.AuthAction;
+import guru.springframework.msscssm.services.action.AuthApprovedAction;
+import guru.springframework.msscssm.services.action.AuthDeclinedAction;
 import guru.springframework.msscssm.services.action.PreAuthAction;
+import guru.springframework.msscssm.services.action.PreAuthApprovedAction;
+import guru.springframework.msscssm.services.action.PreAuthDeclinedAction;
 import guru.springframework.msscssm.services.guard.PaymentGuard;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +44,19 @@ public class StateMachineConfig extends StateMachineConfigurerAdapter<PaymentSta
     PreAuthAction preAuthAction;
 
     @Autowired
+    PreAuthApprovedAction preAuthApprovedAction;
+
+    @Autowired
+    PreAuthDeclinedAction preAuthDeclinedAction;
+
+    @Autowired
     AuthAction authAction;
+
+    @Autowired
+    AuthApprovedAction authApprovedAction;
+
+    @Autowired
+    AuthDeclinedAction authDeclinedAction;
 
     @Autowired
     PaymentGuard paymentGuard;
@@ -63,9 +79,11 @@ public class StateMachineConfig extends StateMachineConfigurerAdapter<PaymentSta
                 .and()
 
                 .withExternal().source(NEW).target(PRE_AUTH).event(PRE_AUTH_APPROVED)
+                    .action(preAuthApprovedAction.getAction())
                 .and()
 
                 .withExternal().source(NEW).target(PRE_AUTH_ERROR).event(PRE_AUTH_DECLINED)
+                    .action(preAuthDeclinedAction.getAction())
                 .and()
 
                 .withExternal().source(PRE_AUTH).target(PRE_AUTH).event(AUTHORIZE)
@@ -73,9 +91,11 @@ public class StateMachineConfig extends StateMachineConfigurerAdapter<PaymentSta
                 .and()
 
                 .withExternal().source(PRE_AUTH).target(AUTH).event(AUTH_APPROVED)
+                    .action(authApprovedAction.getAction())
                 .and()
 
                 .withExternal().source(PRE_AUTH).target(AUTH_ERROR).event(AUTH_DECLINED)
+                    .action(authDeclinedAction.getAction())
         ;
     }
 
